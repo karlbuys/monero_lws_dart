@@ -99,23 +99,39 @@ class MoneroLightweightWalletServiceClient {
   get_address_txs(address, viewKey) async {
     Response response;
     String Uri = "${this.lwsDaemonAddress}/get_address_txs";
-    response = await dio.post(
-      Uri,
-      data: {'address': address, 'view_key': viewKey},
-    );
+    try {
+      response = await dio.post(
+        Uri,
+        data: {'address': address, 'view_key': viewKey},
+      );
+    } on DioException catch (e) {
+      print('Error: $e');
+      rethrow;
+    }
   }
 
   /* Selects random outputs to use in a ring signature of a new transaction. */
-  // get_random_outs(address, viewKey) {
+  Future<Response> get_random_outs(String address, String viewKey) async {
+    Response response;
+    String Uri = "${this.lwsDaemonAddress}/get_random_outs";
+    try {
+      response = await dio.post(
+        Uri,
+        data: {'address': address, 'view_key': viewKey},
+      );
+      return response;
+    } on DioException catch (e) {
+      print('Error: $e');
+      rethrow;
+    }
+  }
 
-  // }
-
-  // /* Returns a list of received outputs.
-  //  * The client must determine when the output was actually spent, since LWS
+  // /* Returns a list of outputs that are received outputs.
+  //  * We need to determine cliesnt-side determine when the output was actually spent, since LWS
   //  * won’t be able to calculate which have been spent with only an address and a viewkey
   //  *
   // */
-  // get_unspent_outs(address, viewKey) {}
+  get_unspent_outs(address, viewKey) {}
 
   // submit_raw_tx(address, viewKey, rawTx) {}
 }
