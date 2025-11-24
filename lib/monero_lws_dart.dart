@@ -83,6 +83,9 @@ class MoneroLightweightWalletServiceClient {
   // }
 
   // Sends a request to a LWS wallet to scan our address using our public spend key.
+  // TODO: This hasn't been configured and run yet, but we do know that if a query
+  // returns a 501 status, it doesn't accept requests for new wallets.
+  // If it accepts them, will return non-200 status indicating admin approval status
   Future<bool> import_wallet_request(String address, String viewKey) async {
 
     return true;
