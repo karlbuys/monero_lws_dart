@@ -5,6 +5,8 @@ import 'package:dio/io.dart';
 
 // Get the deno tool at https://github.com/cake-tech/lws-interface-cli-deno.git
 final dio = Dio();
+final isDebug = true;
+// TODO: Pull isDebug from where Cake does it
 
 // Configure Dio to ignore bad certificates
 Dio createDio({required String baseUrl, bool trustSelfSigned = false}) {
@@ -25,37 +27,66 @@ Dio createDio({required String baseUrl, bool trustSelfSigned = false}) {
 class MoneroLightweightWalletServiceClient {
   String? lwsDaemonAddress;
   Dio dio;
-  // Address is actually base58-address I think?
+  
+  // Construct an instance of this class
   MoneroLightweightWalletServiceClient({Dio? dio, String? lwsDaemonAddress})
     : lwsDaemonAddress = lwsDaemonAddress ?? "https://127.0.0.1:8443",
       dio = dio ?? Dio();
 
   // deno run --unsafely-ignore-certificate-errors --allow-net index.js --host https://127.0.0.1:8443 login --address 43zxvpcj5Xv9SEkNXbMCG7LPQStHMpFCQCmkmR4u5nzjWwq5Xkv5VmGgYEsHXg4ja2FGRD5wMWbBVMijDTqmmVqm93wHGkg --view_key 7bea1907940afdd480eff7c4bcadb478a0fbb626df9e3ed74ae801e18f53e104 --
-  // Future<Map<String, dynamic>> login(
-  //   String address,
-  //   String viewKey,
-  //   String create_account,
-  //   String generated_locally,
-  // ) async {
-  //   Response response;
-  //   String Uri = "${lwsDaemonAddress}/login";
-  //   response = await dio.post(
-  //     Uri,
-  //     data: {
-  //       'address': address,
-  //       'view_key': viewKey,
-  //       'create_account': true,
-  //       'generated_locally': true,
-  //     },
-  //   );
+// let request_body = {
+//       address: address,
+//       view_key: view_key,
+//       create_account: createAccount,
+//       generated_locally: true
+//     }
+//     if (this.api_key !== null) {
+//       request_body.api_key = this.api_key
+//     }
+//     const response = await this.httpClient.post('/login', request_body).catch(err => {
+//       if (err.response === undefined) {
+//         throw new Error('no response')
+//       }
+//       if (err.response.status === 403) {
+//         throw new Error('account does not exist')
+//       }
+//       if (err.response.status === 422) {
+//         throw new Error('missing or invalid parameters')
+//       }
+//       throw err
+//     })
+//     // { new_address: false, start_height: 2547018}
+//     const result = {
+//       isNewAddress: response.data.new_address,
+//       startHeight: response.data.start_height
+//     }
+
+  Future<Map<String, dynamic>> login(
+    String address,
+    String viewKey,
+    String createAccountIfDoesntExist,
+    String generated_locally,
+  ) async {
+    Response response;
+    String Uri = "${lwsDaemonAddress}/login";
+    response = await dio.post(
+      Uri,
+      data: {
+        'address': address,
+        'view_key': viewKey,
+        'create_account': true,
+        'generated_locally': true,
+      },
+    );
 
   //   // Now I need to use dio to craft a request to send to 127.0.0.1
   // }
 
   // Sends a request to a LWS wallet to scan our address using our public spend key.
-  // import_wallet_request(String address, String viewKey) async {
+  Future<bool> import_wallet_request(String address, String viewKey) async {
 
-  // }
+    return true;
+  }
 
   // Returns the minimal set of information needed to calculate a wallet balance.
   // The server cannot calculate when a spend occurs without the spend key,
@@ -73,6 +104,9 @@ class MoneroLightweightWalletServiceClient {
   //   "transaction_height": 3548229,
   //   "blockchain_height": 3548229
   // }
+  // Note that this endpoint may or may not return a rates field with fiat rates
+  // This is dependant on the LWS server configuration.
+
   Future<Response> get_address_info(String address, String viewKey) async {
     Response response;
     String Uri = "${this.lwsDaemonAddress}/get_address_info";
