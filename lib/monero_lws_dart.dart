@@ -27,40 +27,13 @@ Dio createDio({required String baseUrl, bool trustSelfSigned = false}) {
 class MoneroLightweightWalletServiceClient {
   String? lwsDaemonAddress;
   Dio dio;
-  
+
   // Construct an instance of this class
   MoneroLightweightWalletServiceClient({Dio? dio, String? lwsDaemonAddress})
     : lwsDaemonAddress = lwsDaemonAddress ?? "https://127.0.0.1:8443",
       dio = dio ?? Dio();
 
   // deno run --unsafely-ignore-certificate-errors --allow-net index.js --host https://127.0.0.1:8443 login --address 43zxvpcj5Xv9SEkNXbMCG7LPQStHMpFCQCmkmR4u5nzjWwq5Xkv5VmGgYEsHXg4ja2FGRD5wMWbBVMijDTqmmVqm93wHGkg --view_key 7bea1907940afdd480eff7c4bcadb478a0fbb626df9e3ed74ae801e18f53e104 --
-// let request_body = {
-//       address: address,
-//       view_key: view_key,
-//       create_account: createAccount,
-//       generated_locally: true
-//     }
-//     if (this.api_key !== null) {
-//       request_body.api_key = this.api_key
-//     }
-//     const response = await this.httpClient.post('/login', request_body).catch(err => {
-//       if (err.response === undefined) {
-//         throw new Error('no response')
-//       }
-//       if (err.response.status === 403) {
-//         throw new Error('account does not exist')
-//       }
-//       if (err.response.status === 422) {
-//         throw new Error('missing or invalid parameters')
-//       }
-//       throw err
-//     })
-//     // { new_address: false, start_height: 2547018}
-//     const result = {
-//       isNewAddress: response.data.new_address,
-//       startHeight: response.data.start_height
-//     }
-
   Future<Map<String, dynamic>> login(
     String address,
     String viewKey,
@@ -69,26 +42,82 @@ class MoneroLightweightWalletServiceClient {
   ) async {
     Response response;
     String Uri = "${lwsDaemonAddress}/login";
-    response = await dio.post(
-      Uri,
-      data: {
-        'address': address,
-        'view_key': viewKey,
-        'create_account': true,
-        'generated_locally': true,
-      },
-    );
+    try {
+      response = await dio.post(
+        Uri,
+        data: {
+          'address': address,
+          'view_key': viewKey,
+          'create_account': true, // TODO: verify - I think this creates new accounts
+          'generated_locally': true,
+        },
+      );
+    } on DioException catch (e) {
+      if (e.response != null) {
+        switch (e.response!.statusCode) {
+          case 400:
+          print('Bad Request: ${e.response!.data}');
+          break;
+        case 401:
+          print('Unauthorized: ${e.response!.data}');
+          // Potentially refresh token or redirect to login
+          break;
+        case 403:
+          print('Approval: your account is pending approval from the administrator. Try again later');
+          break;
+        case 422:
+          print('Error: Make sure your address / viewkey is properly set in your request. ${e.response!.data}');
+          break;
+        case 501:
+          print('This server does not allow account creations: ${e.response!.data}');
+          break;
+        default:
+          print('Unhandled HTTP Error: ${e.response!.statusCode} - ${e.response!.data}');
+        }
+      rethrow;
+  }
 
   //   // Now I need to use dio to craft a request to send to 127.0.0.1
-  // }
 
   // Sends a request to a LWS wallet to scan our address using our public spend key.
   // TODO: This hasn't been configured and run yet, but we do know that if a query
   // returns a 501 status, it doesn't accept requests for new wallets.
   // If it accepts them, will return non-200 status indicating admin approval status
   Future<bool> import_wallet_request(String address, String viewKey) async {
+    // TODO: Finish this function
+    Response response;
+    String Uri = "${lwsDaemonAddress}/login";
+    try {
+      response = await dio.post(
+        Uri,
+        data: { 'address': address, 'view_key': viewKey },
+      );
 
-    return true;
+    } on DioException catch (e) {
+      if (e.response != null) {
+        switch (e.response!.statusCode) {
+          case 400:
+          print('Bad Request: ${e.response!.data}');
+          break;
+        case 401:
+          print('Unauthorized: ${e.response!.data}');
+          // Potentially refresh token or redirect to login
+          break;
+        case 403:
+          print('Approval: your account is pending approval from the administrator. Try again later');
+          break;
+        case 422:
+          print('Error: Make sure your address / viewkey is properly set in your request. ${e.response!.data}');
+          break;
+        case 501:
+          print('This server does not allow account creations: ${e.response!.data}');
+          break;
+        default:
+          print('Unhandled HTTP Error: ${e.response!.statusCode} - ${e.response!.data}');
+        }
+      
+    }
+    return false;
   }
 
   // Returns the minimal set of information needed to calculate a wallet balance.
@@ -142,7 +171,20 @@ class MoneroLightweightWalletServiceClient {
         data: {'address': address, 'view_key': viewKey},
       );
     } on DioException catch (e) {
-      print('Error: $e');
+      if (e.response != null) {
+        switch (e.response!.statusCode) {
+              case 403:
+              print('Your address is not authorised');
+              break;
+              case 422:
+              print('Error: Make sure your address / viewkey is properly set in your request. ${e.response!.data}');
+              break; 
+              default: 
+              print('Error: ${e.response!.data}');
+        }
+      } else {
+        print("Error: Network connection error");
+      }
       rethrow;
     }
   }
@@ -156,19 +198,33 @@ class MoneroLightweightWalletServiceClient {
         Uri,
         data: {'address': address, 'view_key': viewKey},
       );
-      return response;
     } on DioException catch (e) {
-      print('Error: $e');
+      if (e.response != null) {
+        switch (e.response!.statusCode) {
+          // TODO: Add error conditions
+          case 403: 
+            print("Forbidden");
+            break;
+          case 422:
+            print('Error: Make sure your address / viewkey is properly set in your request. ${e.response!.data}');
+            break; 
+          default: 
+          print('Error: ${e.response!.data}');
+        }
+      } else {
+        // The LWS server is unreachable for some reason
+        print("Error: Network connection error");
+      }
       rethrow;
-    }
   }
 
   // /* Returns a list of outputs that are received outputs.
   //  * We need to determine cliesnt-side determine when the output was actually spent, since LWS
   //  * won’t be able to calculate which have been spent with only an address and a viewkey
-  //  *
-  // */
-  get_unspent_outs(address, viewKey) {}
+  //  Expect a result like documented in the tests
+  Future<Response> get_unspent_outs(String address, String viewKey) async {
+    
+  }
 
   // submit_raw_tx(address, viewKey, rawTx) {}
 }
