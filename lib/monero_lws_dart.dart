@@ -86,6 +86,7 @@ class MoneroLightweightWalletServiceClient {
         rethrow;
       }
     }
+    throw (Exception('An unexpected error occurred during login'));
   }
 
   //   // Now I need to use dio to craft a request to send to 127.0.0.1

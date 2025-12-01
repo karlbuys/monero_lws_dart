@@ -18,9 +18,11 @@ Nothing really, yet
 
 ## Getting started
 
-You need dart (duh)
-
 ## Usage
+
+## Expected returned information
+
+
 
 todo
 
